@@ -19,7 +19,7 @@ Goal: a small, reproducible benchmark of off-the-shelf agents (Claude Code, Gemi
 - [ ] Consider exposing the desktop as an MCP server (structured `shot`, `click`, `type` tools that return images) so neither agent needs a shell at all; this removes the allowlist question and gives both agents an identical interface
 - [ ] Read OSWorld, WindowsAgentArena and recent prompt-injection benchmarks for agents; write down what this benchmark adds or narrow its scope
 - [ ] Check the current usage limits for unattended `claude -p` on the subscription and for Gemini CLI's free tier, and confirm automated benchmark runs are within each product's terms
-- [ ] CI running the integration tests on Ubuntu 22.04 and 24.04
+- [x] CI running the integration tests on Ubuntu 22.04 and 24.04
 
 ### 2. Tasks (weeks 3–4)
 
