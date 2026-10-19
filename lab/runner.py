@@ -12,6 +12,10 @@ from .env import Env
 from .prompt import build_prompt
 
 FRAME_WIDTH = 640
+try:
+    ADAPTIVE = Image.Palette.ADAPTIVE
+except AttributeError:  # Pillow < 9.1; Ubuntu 22.04 ships 9.0
+    ADAPTIVE = Image.ADAPTIVE  # type: ignore[attr-defined]
 
 
 class Recorder(threading.Thread):
@@ -45,7 +49,7 @@ def make_gif(frames_dir, out_path, max_frames=240, ms_per_frame=500):
     if not frames:
         return None
     step = max(1, len(frames) // max_frames)
-    images = [Image.open(p).convert("P", palette=Image.Palette.ADAPTIVE) for p in frames[::step]]
+    images = [Image.open(p).convert("P", palette=ADAPTIVE) for p in frames[::step]]
     images[0].save(out_path, save_all=True, append_images=images[1:], duration=ms_per_frame, loop=0,
                    optimize=True)
     return out_path
