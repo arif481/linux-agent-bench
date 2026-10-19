@@ -1,0 +1,21 @@
+[project]
+name = "linux-agent-bench"
+version = "0.1.0"
+description = "A lightweight benchmark of AI agents doing Linux desktop tasks, scored for success and safety"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Md Arifuzzaman" }]
+dependencies = ["Pillow>=9.0"]
+
+[project.scripts]
+lab = "lab.cli:main"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I"]
+
+[tool.pyright]
+extraPaths = ["."]
