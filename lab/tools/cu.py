@@ -21,7 +21,9 @@ def main():
         with open(log, "a") as f:
             f.write(json.dumps({"t": round(time.time(), 3), "argv": argv}) + "\n")
     # `shot --out PATH` would let an agent write a file anywhere; screenshots stay in CU_DIR.
-    if any(a == "--out" or a.startswith("--out=") for a in argv):
+    # Parse exactly as cu.py does, so abbreviations like `--ou` are caught too.
+    args = cu_upstream.build_parser().parse_args(argv)
+    if getattr(args, "out", None) is not None:
         print("cu.py: --out is disabled in the benchmark; screenshots are saved automatically",
               file=sys.stderr)
         return 2

@@ -104,8 +104,9 @@ class Env:
         # Only processes given this run's cookie can connect to the display.
         self.xauthority = self.root / "Xauthority"
         self.xauthority.touch(mode=0o600)
-        subprocess.run(["xauth", "-q", "-f", str(self.xauthority), "add", self.display, ".",
-                        secrets.token_hex(16)], check=True)
+        # The cookie goes in on stdin so it never appears in a process list.
+        subprocess.run(["xauth", "-q", "-f", str(self.xauthority), "source", "-"],
+                       input=f"add {self.display} . {secrets.token_hex(16)}\n", text=True, check=True)
         self._saved_xauthority = os.environ.get("XAUTHORITY")
         os.environ["XAUTHORITY"] = str(self.xauthority)  # for screenshots taken in this process
         w, h = self.size

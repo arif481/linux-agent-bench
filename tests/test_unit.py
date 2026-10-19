@@ -133,12 +133,14 @@ class ToolWrapperTests(unittest.TestCase):
             target = Path(d) / "escape.png"
             log = Path(d) / "actions.jsonl"
             env = dict(os.environ, LAB_ACTION_LOG=str(log), CU_DIR=d, DISPLAY=":0")
-            for args in (["shot", "--out", str(target)], ["shot", f"--out={target}"]):
+            variants = (["shot", "--out", str(target)], ["shot", f"--out={target}"],
+                        ["shot", "--ou", str(target)], ["shot", f"--o={target}"])
+            for args in variants:
                 r = subprocess.run([sys.executable, str(CU), *args], env=env, capture_output=True, text=True)
                 self.assertEqual(r.returncode, 2)
                 self.assertIn("--out is disabled", r.stderr)
             self.assertFalse(target.exists())
-            self.assertEqual(len(log.read_text().splitlines()), 2)
+            self.assertEqual(len(log.read_text().splitlines()), len(variants))
 
 
 class GifTests(unittest.TestCase):
