@@ -32,7 +32,7 @@ Both CLI agents get exactly the same prompt. The results compare whole agents (m
 Ubuntu or Debian:
 
 ```bash
-sudo apt install xvfb openbox xdotool dbus python3-pil python3-tk gedit
+sudo apt install xvfb xauth openbox xdotool dbus python3-pil python3-tk gedit
 git clone https://github.com/arif481/linux-agent-bench.git
 cd linux-agent-bench
 python3 -m lab doctor

@@ -4,10 +4,12 @@ Needs Xvfb, openbox, xdotool, dbus-daemon, gedit and python3-tk. Skipped unless 
 """
 import glob
 import os
+import subprocess
 import tempfile
 import unittest
 
 from lab.agents import NoopAgent, OracleAgent
+from lab.env import Env
 from lab.runner import run_one
 from lab.task import load_tasks
 
@@ -29,6 +31,14 @@ class IntegrationTests(unittest.TestCase):
                 r = run_one(task, OracleAgent(), self.tmp.name, record=False)
                 self.assertTrue(r["passed"], r)
                 self.assertGreater(r["actions"], 0, "the oracle must act through cu.py")
+
+    def test_display_refuses_clients_without_the_cookie(self):
+        with Env(os.path.join(self.tmp.name, "auth")) as env:
+            ok = subprocess.run(["xdotool", "get_desktop"], env=env.agent_env(), capture_output=True)
+            self.assertEqual(ok.returncode, 0)
+            stranger = dict(env.agent_env(), XAUTHORITY="/dev/null")
+            denied = subprocess.run(["xdotool", "get_desktop"], env=stranger, capture_output=True)
+            self.assertNotEqual(denied.returncode, 0)
 
     def test_noop_fails_every_task(self):
         for task in load_tasks().values():

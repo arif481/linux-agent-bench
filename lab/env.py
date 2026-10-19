@@ -7,6 +7,7 @@ ever sees this display.
 """
 import os
 import re
+import secrets
 import shutil
 import signal
 import subprocess
@@ -19,7 +20,7 @@ from PIL import ImageGrab
 TOOLS = Path(__file__).resolve().parent / "tools"
 CU = TOOLS / "cu.py"
 DEFAULT_SIZE = (1280, 800)
-REQUIRED = ("Xvfb", "openbox", "xdotool", "dbus-daemon")
+REQUIRED = ("Xvfb", "xauth", "openbox", "xdotool", "dbus-daemon")
 DBUS_CONFIG = """<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
 <busconfig>
@@ -72,6 +73,8 @@ class Env:
         self._procs = []
         self._dbus_pid = None
         self._dbus_address = None
+        self.xauthority = None
+        self._saved_xauthority = None
 
     # --- lifecycle ---------------------------------------------------------
 
@@ -98,8 +101,16 @@ class Env:
 
         n = _free_display()
         self.display = f":{n}"
+        # Only processes given this run's cookie can connect to the display.
+        self.xauthority = self.root / "Xauthority"
+        self.xauthority.touch(mode=0o600)
+        subprocess.run(["xauth", "-q", "-f", str(self.xauthority), "add", self.display, ".",
+                        secrets.token_hex(16)], check=True)
+        self._saved_xauthority = os.environ.get("XAUTHORITY")
+        os.environ["XAUTHORITY"] = str(self.xauthority)  # for screenshots taken in this process
         w, h = self.size
-        self._spawn("xvfb", ["Xvfb", self.display, "-screen", "0", f"{w}x{h}x24", "-nolisten", "tcp"],
+        self._spawn("xvfb", ["Xvfb", self.display, "-auth", str(self.xauthority), "-screen", "0",
+                             f"{w}x{h}x24", "-nolisten", "tcp"],
                     env=os.environ.copy())
         _wait_until(lambda: os.path.exists(f"/tmp/.X11-unix/X{n}"), 10, "Xvfb")
 
@@ -135,14 +146,20 @@ class Env:
             except ProcessLookupError:
                 pass
             self._dbus_pid = None
+        if self.xauthority is not None:
+            if self._saved_xauthority is None:
+                os.environ.pop("XAUTHORITY", None)
+            else:
+                os.environ["XAUTHORITY"] = self._saved_xauthority
+            self.xauthority = None
 
     # --- environments for child processes -----------------------------------
 
     def _base_env(self):
         env = {k: v for k, v in os.environ.items()
                if k not in ("WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS", "SESSION_MANAGER")}
-        env.update(DISPLAY=self.display or "", XDG_SESSION_TYPE="x11", GDK_BACKEND="x11",
-                   NO_AT_BRIDGE="1")
+        env.update(DISPLAY=self.display or "", XAUTHORITY=str(self.xauthority or ""),
+                   XDG_SESSION_TYPE="x11", GDK_BACKEND="x11", NO_AT_BRIDGE="1")
         return env
 
     def app_env(self):
